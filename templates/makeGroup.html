@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+
+<head>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        .background {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            /* Two columns of equal width */
+            height: 100vh;
+            width: 400px;
+            height: 600px;
+            border: 1px solid #000;
+        }
+
+        .menuBar {
+            width: 70px;
+            background-color: #e0e0e0;
+        }
+
+        .friend-List {
+            width: 330px;
+            background-color: #f0f0f0;
+            display: colums;
+            grid-template-columns: 1fr auto;
+            /* 첫 번째 컬럼은 남은 공간을 모두 차지하고, 두 번째 컬럼은 자동으로 크기를 조정합니다. */
+            grid-template-rows: 1fr;
+        }
+
+        .chat-ListText {
+            font-size: 18px;
+            width: 200px;
+            border: none;
+            padding: 10px;
+            margin: 5px;
+        }
+
+        .chat-ListText2 {
+            font-size: 15px;
+            width: 200px;
+            border: none;
+            padding: 5px;
+            margin: 5px;
+        }
+
+        .friendimage {
+            width: 50px;
+            height: auto;
+            margin: 10px;
+        }
+
+        .chatimage {
+            width: 50px;
+            height: auto;
+            margin: 10px;
+        }
+
+        .addfriendimage {
+            width: 60px;
+            height: auto;
+            grid-column: 2;
+            grid-row: 1;
+        }
+
+        .friend {
+            width: 300px;
+            border: 1px solid black;
+            padding: 5px;
+            margin: 5px;
+            display: flex;
+            align-items: center;
+            flex-direction: row;
+        }
+
+        .friendMessage {
+            border: 1px solid black;
+            font-size: 13px;
+            margin-right: 10px;
+            margin-left: 20px;
+            padding: 5px;
+        }
+
+        img {
+            width: 40px;
+            height: 40px;
+            border-radius: 20%;
+            margin-right: 10px;
+            margin-left: 5px;
+        }
+
+        .upper {
+            display: flex;
+        }
+
+        .make {
+            font-size: 15px;
+            width: 80px;
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #000;
+            text-align: center;
+        }
+    </style>
+    <script>
+        $(document).ready(function () {
+            getfriendList();
+
+            $(".friendimage").on("click", function () {
+                window.location.href = "/friendList";
+            });
+
+            $(".chatimage").on("click", function () {
+                window.location.href = "/chatList";
+            });
+
+            function getCookie(name) {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    // 쿠키의 이름과 값 분리
+                    const [cookieName, cookieValue] = cookie.split('=');
+                    if (cookieName === name) {
+                        // 찾은 경우 쿠키의 값 반환
+                        return decodeURIComponent(cookieValue);
+                    }
+                }
+                // 해당 이름의 쿠키를 찾지 못한 경우 null 반환
+                return null;
+            }
+
+            var user_id = getCookie('user_id');
+            var user_password = getCookie('user_password');
+
+            function addfriend(friend_name) {
+                //friend 내에 friend name과 friend profile
+                var profileImage = 'static/image/profile.jpeg';
+
+                var newDiv = $('<div>').addClass('friend');
+                var friendProfile = $('<img>').attr('src', profileImage).attr('alt', '프로필 이미지');
+                var friendName = $('<div>').addClass('friendName').text(friend_name);
+                var checkbox = $('<input>').attr('type', 'checkbox').addClass('friendCheckbox');
+                //var friendMessage = $('<div>').addClass('friendMessage').text("====상태메시지====");
+                newDiv.append(friendProfile);
+                newDiv.append(friendName);
+                newDiv.append(checkbox);
+
+                checkbox.css('margin-left', '170px');
+
+                //newDiv.append(friendMessage);
+                $('#friend-List').append(newDiv);
+                //선택하는 거 추가 구현하기
+
+                checkbox.css({
+                    'width': '15px',
+                    'height': '15px'
+                });
+            }
+
+            function getfriendList() {
+                $.getJSON("/getfriendList", function (friendList) {
+                    $.each(friendList, function (key, value) {
+                        if (user_id == value.user_id) {
+                            addfriend(value.friend_name)
+                        }
+                        else if (user_id == value.friend_name) {
+                            addfriend(value.user_id)
+                        }
+                    })
+                })
+            }
+
+            $('#make').on('click', function () {
+                // 선택된 체크박스의 부모인 friend div 가져오기
+                var selectedFriends = $('.friendCheckbox:checked').closest('.friend');
+
+                // 선택된 friend div에 대한 작업 수행
+                var selectedNames = selectedFriends.map(function () {
+                    return $(this).find('.friendName').text();
+                }).get();
+
+                // 선택된 friend names을 배열로 만들기
+                var namesArray = selectedNames;
+
+                // 결과 출력 또는 다른 동작 수행
+                console.log('Selected friends array:', namesArray);
+                var friend_name = namesArray;
+                document.cookie = "groupChat=" + encodeURIComponent(1); //groupChat 인지 유무를 확인
+                document.cookie = "friend_name=" + encodeURIComponent(friend_name);
+                window.location.href = "/index";
+
+            });
+
+        });
+
+    </script>
+</head>
+
+<body>
+    <div class="background" id="background">
+        <div class="menuBar" id="menuBar">
+            <img src="static/image/emptyfriend.png" alt="friend Image" class="friendimage">
+            <img src="static/image/chat.png" alt="chat Image" class="chatimage">
+        </div>
+        <div class="friend-List" id="friend-List">
+            <div class="upper">
+                <div class="chat-ListText" id="chat-ListText">채팅</div>
+                <div class="make" id="make">make</div>
+            </div>
+            <div class="chat-ListText2" id="chat-ListText2">select friends</div>
+        </div>
+    </div>
+</body>
+
+</html>

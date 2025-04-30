@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+
+<head>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        .background {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+
+            background-color: #FEE500;
+            border: 1px solid #000;
+            width: 400px;
+            height: 600px;
+        }
+
+        .UserId-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 5px;
+            width: 400px;
+            height: 60px;
+        }
+
+        .Input-UserId {
+            width: 300px;
+            height: 30px;
+            resize: none;
+        }
+
+        .Input-UserPassword {
+            width: 300px;
+            height: 30px;
+            resize: none;
+        }
+
+        .login-button {
+            background-color: #594941;
+            color: #ffffff;
+            font-size: 15px;
+            border: none;
+            padding: 5px;
+            margin: 5px;
+            width: 300px;
+        }
+
+        .register-button {
+            background-color: #594941;
+            color: #ffffff;
+            font-size: 15px;
+            border: none;
+            padding: 5px;
+            margin: 5px;
+            width: 300px;
+        }
+
+        .talkimage {
+            width: 130px;
+            height: auto;
+            margin-top: 30px;
+            margin-bottom: 50px;
+        }
+
+        .set-margin {
+            height: 80px;
+        }
+
+        .also {
+            margin: 10px;
+            font-size: 12px;
+            color: #333;
+            text-align: center;/
+        }
+    </style>
+    <script>
+        $(document).ready(function () {
+            $("#register-button").on("click", function () {
+                var user_id = $('#Input-UserId').val();
+                var user_password = $('#Input-UserPassword').val();
+                var data = { "user_id": user_id, "user_password": user_password };
+                $.ajax({
+                    url: "/register",
+                    type: "post",
+                    contentType: "application/json",
+                    dataType: "json",
+                    data: JSON.stringify(data),
+                    success: function () {
+                        console.log("success");
+                    },
+                })
+            });
+
+            $("#login-button").on("click", function () {
+                var user_id = $('#Input-UserId').val();
+                var user_password = $('#Input-UserPassword').val();
+                $.getJSON("/login", function (userInfo) {
+                    $.each(userInfo, function (key, value) {
+                        if (user_id == value.user_id) {
+                            if (user_password == value.user_password) {
+                                // 쿠키 설정
+                                document.cookie = "myCookie=myValue; path=/; domain=127.0.0.1; port=8000";
+                                document.cookie = "user_id=" + encodeURIComponent(user_id);
+                                document.cookie = "user_password=" + encodeURIComponent(user_password);
+                                window.location.href = "/friendList";
+                            }
+                            else {
+                                console.log("login failed")
+                            }
+                        }
+                        else {
+                            console.log("login failed")
+                        }
+                    })
+                })
+            });
+
+        });
+    </script>
+</head>
+<body>
+    <div class="background" id="background">
+        <img src="static/image/talk.png" alt="Talk Image" class="talkimage">
+        <div class="UserId-area">
+            <input type="text" class="Input-UserId" id="Input-UserId" placeholder=" SKKU 계정(이메일)">
+            <input type="text" class="Input-UserPassword" id="Input-UserPassword" placeholder="비밀번호">
+        </div>
+        <button class="login-button" id="login-button">login</button>
+        <div class="also">------------------- 또는 -------------------</div>
+        <button class="register-button" id="register-button">register</button>
+        <div class="set-margin"></div>
+    </div>
+</body>
+
+</html>

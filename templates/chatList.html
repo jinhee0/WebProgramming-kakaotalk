@@ -1,0 +1,273 @@
+<html>
+
+<head>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        .background {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            height: 100vh;
+            width: 400px;
+            height: 600px;
+            border: 1px solid #000;
+        }
+
+        .menuBar {
+            width: 70px;
+            background-color: #e0e0e0;
+        }
+
+        .chat-List {
+            width: 330px;
+            background-color: #f0f0f0;
+        }
+
+        .friendimage {
+            width: 50px;
+            height: auto;
+            margin: 10px;
+        }
+
+        .chatimage {
+            width: 50px;
+            height: auto;
+            margin: 10px;
+        }
+
+        .chat-ListText {
+            font-size: 18px;
+            width: 200px;
+            border: none;
+            padding: 10px;
+            margin: 5px;
+        }
+
+        .chatList {
+            border: 1px solid #000;
+            padding: 5px;
+            margin: 5px;
+        }
+
+        .newChatFriend {
+            font-size: 15px;
+        }
+
+        .ChatRecentMessage {
+            font-size: 10px;
+            width: 200px;
+            border: none;
+        }
+
+        .upper {
+            display: flex;
+        }
+
+        .groupchat {
+            font-size: 15px;
+            width: 160px;
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #000;
+            text-align: center;
+        }
+    </style>
+    <script>
+        $(document).ready(function () {
+            getChatList();
+            $(".friendimage").on("click", function () {
+                window.location.href = "/friendList";
+            });
+
+            $(".chatimage").on("click", function () {
+                window.location.href = "/chatList";
+            });
+
+            function getCookie(name) {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    // 쿠키의 이름과 값 분리
+                    const [cookieName, cookieValue] = cookie.split('=');
+                    if (cookieName === name) {
+                        // 찾은 경우 쿠키의 값 반환
+                        return decodeURIComponent(cookieValue);
+                    }
+                }
+                // 해당 이름의 쿠키를 찾지 못한 경우 null 반환
+                return null;
+            }
+
+            var user_id = getCookie('user_id');
+            var user_password = getCookie('user_password');
+
+            var uniqueChatList = [];
+            function getChatList() {
+                $.getJSON("/getChat", function (chatHistory) {
+                    $.each(chatHistory, function (key, value) {
+                        //console.log(value.groupChat);
+                        if (value.groupChat == 0) {
+                            if (user_id == value.user_id) {
+                                addToUniqueChatList(value.friend_name, value);
+                            }
+                            else if (user_id == value.friend_name) {
+                                addToUniqueChatList(value.user_id, value);
+                            }
+                        }
+                        else {
+                            var friendNames = value.friend_name.split(',');
+                            // friendNames.forEach(function (friendName) {
+                            //     if (user_id == value.user_id){
+                            //         find = 1;
+                            //         addToUniqueChatListGroup(value.friend_name, value, 0);
+                            //     }
+                            //     else if (user_id == friendName) {
+                            //         find = 1;
+                            //         addToUniqueChatListGroup(value.user_id, value, 1);
+                            //     }
+                            // });
+                            for (const friendName of friendNames) {
+                                if (user_id == value.user_id) {
+                                    addToUniqueChatListGroup(value.friend_name, value, 0);
+                                    break; // 반복을 중단
+                                } else if (user_id == friendName) {
+                                    addToUniqueChatListGroup(value.user_id, value, 1);
+                                    break; // 반복을 중단
+                                }
+                            }
+                        }
+
+                    })
+                    addChatListDiv(uniqueChatList);
+                })
+                //console.log(uniqueChatList);
+            }
+
+            function addToUniqueChatList(chatPartner, chatRecord) {
+                // 이미 해당 채팅 상대와의 채팅 기록이 있는지 확인
+                var existingChat = uniqueChatList.find(function (chat) {
+                    return chat.user_id === chatPartner;
+                });
+
+                if (existingChat) {
+                    // 이미 채팅 기록이 있는 경우 최신 메시지만 업데이트
+                    existingChat.message = chatRecord.message;
+                    existingChat.timeString = chatRecord.timeString;
+                } else {
+                    // 채팅 기록이 없는 경우 새로운 항목 추가
+                    uniqueChatList.push({
+                        user_id: chatPartner,
+                        friend_name: chatRecord.friend_name,
+                        latestMessage: chatRecord.message,
+                        timeString: chatRecord.timeString,
+
+                    });
+                }
+            }
+
+            function addToUniqueChatListGroup(chatPartner, chatRecord, flag) {
+                // 이미 해당 채팅 상대와의 채팅 기록이 있는지 확인
+                // var existingChat = uniqueChatList.find(function (chat) {
+                //     return chat.user_id === chatPartner;
+                // });
+
+                if (flag == 1) {
+                    var friends = chatRecord.friend_name
+                    var friendArray = friends.split(',');
+                    friendArray.forEach((item, index) => {
+                        if (item == user_id) {
+                            friendArray[index] = chatRecord.user_id;
+                        }
+                    })
+                    var updatedFriends = friendArray.join(',');
+                    chatRecord.friend_name = updatedFriends;
+                    chatRecord.user_id = user_id;
+                }
+
+                var existingChat = uniqueChatList.find(function (chat) {
+                    var partnerNames = chatPartner.split(',');
+
+                    // 배열 내의 각 이름이 chat의 user_id와 일치하는지 확인합니다.
+                    return partnerNames.some(function (name) {
+                        return chat.user_id === name.trim();
+                    });
+                });
+
+                if (existingChat == 0) {
+                    // 이미 채팅 기록이 있는 경우 최신 메시지만 업데이트
+                    existingChat.message = chatRecord.message;
+                    existingChat.timeString = chatRecord.timeString;
+                } else {
+                    // 채팅 기록이 없는 경우 새로운 항목 추가
+                    uniqueChatList.push({
+                        user_id: chatRecord.user_id,
+                        friend_name: chatRecord.friend_name,
+                        message: chatRecord.message,
+                        timeString: chatRecord.timeString,
+
+                    });
+                }
+                console.log(uniqueChatList)
+            }
+
+
+            function addChatListDiv(chatList) {
+                chatList.forEach(chat => {
+                    if (user_id == chat.user_id) {
+                        var chatList = $('<div>').addClass('chatList');
+                        var newChatFriend = $('<div>').addClass('newChatFriend').text(chat.friend_name);
+                        var ChatRecentMessage = $('<div>').addClass('ChatRecentMessage').html(chat.message);
+                    }
+                    else {
+                        var chatList = $('<div>').addClass('chatList');
+                        var newChatFriend = $('<div>').addClass('newChatFriend').html(chat.user_id);
+                        var ChatRecentMessage = $('<div>').addClass('ChatRecentMessage').html(chat.message);
+                    }
+                    chatList.append(newChatFriend);
+                    chatList.append(ChatRecentMessage);
+
+                    $('#chat-List').append(chatList);
+                });
+            }
+
+            function handleChatClick() {
+                var friend_name = $(this).find('.newChatFriend').html();
+                document.cookie = "friend_name=" + encodeURIComponent(friend_name);
+                //console.log(friend_name.indexOf(',') !== -1)
+                if (friend_name.indexOf(',') !== -1) {
+                    console.log(friend_name.indexOf(',') !== -1)
+                    document.cookie = "groupChat=" + encodeURIComponent(1);
+                }
+                else {
+                    document.cookie = "groupChat=" + encodeURIComponent(0);
+                }
+                window.location.href = "/index";
+            }
+
+            $('#groupchat').on('click', function () {
+                //friend_list를 모두 불러와서 다시 띄우고 선택과 make buttond을 만들어
+                //이러면 table도 새로만들어야 할거같긴함
+                console.log("Group Chat Clicked!");
+                window.location.href = "/makeGroup";
+            });
+
+            $('#chat-List').on('click', '.chatList', handleChatClick);
+        });
+    </script>
+</head>
+
+<body>
+    <div class="background" id="background">
+        <div class="menuBar" id="menuBar">
+            <img src="static/image/emptyfriend.png" alt="friend Image" class="friendimage">
+            <img src="static/image/chat.png" alt="chat Image" class="chatimage">
+        </div>
+        <div class=" chat-List" id="chat-List">
+            <div class="upper">
+                <div class="chat-ListText" id="chat-ListText">채팅</div>
+                <div class="groupchat" id="groupchat">make group chat</div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
